@@ -27,8 +27,8 @@ public class EntityTest {
 
         try {
             Memo memo = new Memo(); // 저장할 엔터티 객체 생성
-            memo.setId(2L);
-            memo.setUsername("안녕11");
+            memo.setId(1L);
+            memo.setUsername("안녕");
             memo.setContents("영속성 컨텍스트와 트랜잭션 이해하기.");
 
             em.persist(memo); // EntityManager 가 memo 객체를 영속성 컨텍스트에 저장한다.
@@ -63,6 +63,97 @@ public class EntityTest {
             e.printStackTrace();
             et.rollback();
         } finally{
+            em.close();
+        }
+        emf.close();
+    }
+
+    @Test
+    @DisplayName("Entity 저장 : 1차캐싱")
+    void test1(){
+        EntityTransaction et = em.getTransaction();
+        et.begin();
+
+        try {
+            Memo memo = new Memo();
+            memo.setId(3L);
+            memo.setUsername("Meta");
+            memo.setContents("1차 캐시 Entity 저장");
+
+            em.persist(memo);
+
+            et.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            et.rollback();
+        } finally {
+            em.close();
+        }
+        emf.close();
+    }
+
+    @Test
+    @DisplayName("Entity 조회 : 캐시 저장소에 해당하는 id가 존재하지 않는 경우")
+    void test2() {
+        try {
+            Memo memo = em.find(Memo.class, 3);
+            System.out.println(memo.getId());
+            System.out.println(memo.getUsername());
+            System.out.println(memo.getContents());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            em.close();
+        }
+        emf.close();
+    }
+
+    @Test
+    @DisplayName("Entity 조회 : 캐시 저장소에 해당하는 id가 존재하는 경우")
+    void test3() {
+        try {
+            Memo memo1 = em.find(Memo.class, 3);
+            System.out.println("memo1 조회후 캐시 저장소에 저장 \n");
+
+            Memo memo2 = em.find(Memo.class, 3);
+            System.out.println(memo2.getId());
+            System.out.println(memo2.getUsername());
+            System.out.println(memo2.getContents());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            em.close();
+        }
+        emf.close();
+    }
+
+    @Test
+    @DisplayName("객체 동일성 보장 테스트")
+    void test4() {
+        EntityTransaction et = em.getTransaction();
+
+        et.begin();
+
+        try {
+            Memo memo = new Memo();
+            memo.setId(4L);
+            memo.setUsername("Meta222");
+            memo.setContents("객체 동일성 보장");
+
+            em.persist(memo);
+
+            Memo memo1 = em.find(Memo.class, 4);
+            Memo memo2 = em.find(Memo.class, 4);
+            Memo memo3 = em.find(Memo.class, 3);
+
+            System.out.println(memo1 == memo2); // true
+            System.out.println(memo3 == memo2); // false
+
+            et.commit();
+        } catch (Exception e) {
+            et.rollback();
+            throw new RuntimeException(e);
+        } finally {
             em.close();
         }
         emf.close();
